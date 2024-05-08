@@ -1,10 +1,10 @@
 package com.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 
 import java.io.Reader;
 import java.nio.file.Files;
@@ -84,21 +84,21 @@ public class DsvToJSONLConverter implements  FormatConverter {
     @Override
     public  void convert(String inputFileName,char delimiter, String outputFileName) throws Exception{
             Path path = Paths.get(inputFileName);
-            List<String[]> list = new ArrayList<>();
             try(Reader reader = Files.newBufferedReader(path)) {
                 CSVParser parser = new CSVParserBuilder().withSeparator(delimiter).build();
-                try(CSVReader csvReader = new CSVReader(reader)) {
+                try(CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(0).withCSVParser(parser).build()) {
+
                     String[] headers = csvReader.readNext();
                     Stream<String[]> stream = csvReader.readAll().stream();
 
                     ObjectMapper objectMapper = new ObjectMapper();
-                    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+//                    objectMapper.enable(SerializationFeature.);
 
                     try {
                         Files.deleteIfExists(Paths.get(outputFileName));
                         stream.forEach(line -> {
                             try {
-                                Map<String,Object> data = new HashMap<>();
+                                Map<String,Object> data = new LinkedHashMap<>();
                                 for(int i = 0; i < headers.length;i++) {
 
                                     if(isNumeric(line[i])) {
@@ -112,7 +112,7 @@ public class DsvToJSONLConverter implements  FormatConverter {
                                         if(isValidDateFormat(line[i])) {
 
                                             String formattedDate = dateFormatter(line[i]);
-                                            System.out.println(formattedDate);
+//                                            System.out.println(formattedDate);
                                             if(formattedDate != null) {
 //
                                                 data.put(headers[i],formattedDate);
@@ -129,7 +129,20 @@ public class DsvToJSONLConverter implements  FormatConverter {
                                     }
                                 }
                                 String json = objectMapper.writeValueAsString(data);
-                                Files.write(Paths.get(outputFileName),(json + System.lineSeparator()).getBytes(), java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                                StringBuilder modifiedJson = new StringBuilder(json);
+                                for (int i = 1; i < modifiedJson.length() - 1; i++) {
+                                    if (modifiedJson.charAt(i) == ':' && modifiedJson.charAt(i + 1) != ' ') {
+                                        modifiedJson.insert(i + 1, ' ');
+                                    }
+                                }
+//                                System.out.println(json);
+//                                Files.write(Paths.get(ossutputFileName),(json + System.lineSeparator()).getBytes(), java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                                Files.write(
+                                        Paths.get(outputFileName),
+                                        (modifiedJson +System.lineSeparator()).getBytes(),
+                                        java.nio.file.StandardOpenOption.CREATE,
+                                        java.nio.file.StandardOpenOption.APPEND
+                                );
                             }catch(Exception e) {
                                 e.printStackTrace();
                             }
