@@ -12,10 +12,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 public class DsvToJSONLConverter implements  FormatConverter {
 
     private static boolean isNumeric(String str) {
@@ -89,14 +91,19 @@ public class DsvToJSONLConverter implements  FormatConverter {
                 try(CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(0).withCSVParser(parser).build()) {
 
                     String[] headers = csvReader.readNext();
-                    Stream<String[]> stream = csvReader.readAll().stream();
+
+
+//                    Stream<String[]> stream = csvReader.readAll().stream();
 
                     ObjectMapper objectMapper = new ObjectMapper();
 //                    objectMapper.enable(SerializationFeature.);
 
+
                     try {
+                        String[] line;
                         Files.deleteIfExists(Paths.get(outputFileName));
-                        stream.forEach(line -> {
+//                        stream.forEach(line -> {
+                        while((line = csvReader.readNext()) != null)  {
                             try {
                                 Map<String,Object> data = new LinkedHashMap<>();
                                 for(int i = 0; i < headers.length;i++) {
@@ -146,7 +153,7 @@ public class DsvToJSONLConverter implements  FormatConverter {
                             }catch(Exception e) {
                                 e.printStackTrace();
                             }
-                        });
+                        }
                     }catch (Exception e) {
                         e.printStackTrace();
                     }
