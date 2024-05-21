@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -17,6 +18,20 @@ public class DSVToJSONConverterTest {
     @BeforeEach
     public void serviceCreation() {
         service = new ConversionService(new DsvToJSONLConverter());
+    }
+
+    @Test
+    public void testConversion() {
+        String inputFile = "src/main/resources/DSV input 1.txt";;
+        String outputFile = "src/main/resources/generated_output_input1.jsonl";;
+        char delimiter = ',';
+        try {
+            service.convertFile(inputFile, delimiter, outputFile);
+            File output = new File(outputFile);
+            assert(output.exists() && output.canRead());
+        } catch (Exception e) {
+            fail("Exception while converting"+e.getMessage());
+        }
     }
 
     @Test
